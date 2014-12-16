@@ -14,6 +14,33 @@ var consumers = [];
 var localStream;
 var pendingOffers = [];
 
+var qvgaConstraints  = {
+	video: {
+		mandatory: {
+			maxWidth: 320,
+			maxHeight: 180
+		}
+	}
+};
+
+var vgaConstraints  = {
+	video: {
+		mandatory: {
+			maxWidth: 640,
+			maxHeight: 360
+		}
+	}
+};
+
+var hdConstraints  = {
+	video: {
+		mandatory: {
+			minWidth: 1280,
+			minHeight: 720
+		}
+	}
+};
+
 function setupSocket(url){
 	socket = io(url);
 	socket.emit('id', 'producer');
@@ -27,7 +54,7 @@ function setupSocket(url){
 			consumers[pc] = msg.from;
 		}
 		else
-			peerConnections[msg.from].setRemote
+			logError('violation: got second offer from the same consumer');
 	});
 
 	socket.on('ice', function (msg){
@@ -39,16 +66,16 @@ function setupSocket(url){
 			if (msg.candidate)
 			{
 				consumerPc.addIceCandidate(
-						new RTCIceCandidate({
-							sdpMLineIndex: msg.data.sdpMLineIndex,
-							candidate: msg.data.candidate
-						}), 
-						function (){
-							trace('remote candidate added successfully')
-						},
-						function (){
-							trace('error on adding remote candidate');
-						});
+					new RTCIceCandidate({
+						sdpMLineIndex: msg.data.sdpMLineIndex,
+						candidate: msg.data.candidate
+					}), 
+					function (){
+						trace('remote candidate added successfully')
+					},
+					function (){
+						trace('error on adding remote candidate');
+					});
 			}
 		}
 		else
@@ -71,7 +98,7 @@ function setupSocket(url){
 function createPeerConnection(msg){
 	var pc = new RTCPeerConnection(
 		{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] },
-		{ 'optional': [] });
+		{ 'optional': [{DtlsSrtpKeyAgreement: true}] });
 	peerConnections[msg.from] = pc;
 	// trace('PC: '+peerConnections[msg.from]+' msg: '+JSON.stringify(msg)+' PCs: '+JSON.stringify(peerConnections));
 
@@ -95,20 +122,17 @@ function createPeerConnection(msg){
 	pc.setRemoteDescription(new RTCSessionDescription(msg.data),
 		function (){
 			trace('remote description set');
+			if (localStream)
+				sendAnswer(pc);
+			else
+			{
+				trace('stream is not ready yet. pending offer from '+msg.from);
+				pendingOffers[pendingOffers.length] = msg.from;
+			}
 		},
 		function (error){
 			trace('error setting remote description: '+error.toString());
 		});
-
-	if (localStream)
-	{
-		sendAnswer(pc);
-	}
-	else
-	{
-		trace('stream is not ready yet. pending offer from '+msg.from);
-		pendingOffers[pendingOffers.length] = msg.from;
-	}
 
 	return pc;
 }
@@ -125,7 +149,13 @@ function sendAnswer(pc){
 	function (error){
 		logError('error creating answer '+error.toString())
 	},
-	{ 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } });
+	{
+		optional: [],
+		mandatory: {
+			OfferToReceiveAudio: true,
+			OfferToReceiveVideo: true
+		}
+	});
 }
 
 function replyPendingOffers(){

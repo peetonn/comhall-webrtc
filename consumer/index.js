@@ -97,13 +97,14 @@ function startSession(){
 	trace('creating session...');
 	pc = new RTCPeerConnection(
 		{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] },
-		{ 'optional': [] });
+		{ 'optional': [{DtlsSrtpKeyAgreement: true}] });
 
 	pc.onaddstream = function (obj){
 		trace('new stream added '+' video tracks: '+obj.stream.getVideoTracks().length+
 			' audio tracks: '+obj.stream.getAudioTracks().length);
 		var videoElement = document.getElementById('remote-video');
 		attachMediaStream(videoElement, obj.stream);
+		waitUntilRemoteStreamStartsFlowing();
 	}
 
 	pc.onicecandidate = function (event){
@@ -120,6 +121,21 @@ function startSession(){
 	}
 }
 
+function waitUntilRemoteStreamStartsFlowing()
+{
+	var remote_video = document.getElementById('remote-video');
+	if (!(remote_video.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA 
+		|| remote_video.paused || remote_video.currentTime <= 0)) 
+	{
+		trace('receiving remote stream data...');
+	} 
+	else
+	{
+		trace('waiting for remote stream to start...');
+		setTimeout(waitUntilRemoteStreamStartsFlowing, 50);
+	}
+}
+
 function createAndSendOffer(){
 	pc.createOffer(function (sessionDescription){
 		pc.setLocalDescription(sessionDescription,
@@ -130,6 +146,13 @@ function createAndSendOffer(){
 			},
 			function (error){
 				logError("couldn't set local description: "+error.toString());
+			},
+			{ 
+				optional: [], 
+				mandatory: {
+					OfferToReceiveAudio: true,
+					OfferToReceiveVideo: true
+				}
 			});
 	},
 	function (error){
@@ -154,9 +177,9 @@ function disconnect(){
 document.onkeypress = function (event){
 	switch (String.fromCharCode(event.charCode)){
 		case 'l': 
-			toggleElement(document.getElementById('log'));
-			break;
+		toggleElement(document.getElementById('log'));
+		break;
 		default:
-			break;
+		break;
 	}
 }
