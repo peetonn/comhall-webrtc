@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <title>Consumer</title>
+  <script type="text/javascript" src="../common.js"></script>
+  <script src="../webrtc-js/adapter.js"></script>
+  <script src="../socket.io-client/socket.io.js"></script>
+  <script type="text/javascript" src="index.js"></script>
+  <script>
+
+  window.onload = function () {
+    document.getElementById('serverIp').value = defaultProducerAddress;
+    navigator.getUserMedia({audio:false, video:true}, gotUserMedia, 
+      function (error){
+        logError('error getting media: '+error.toString())
+      });
+  }
+
+  function reconnectClick(){
+    disconnect();
+    connect(document.getElementById('serverIp').value);
+  }
+
+  </script>
+</head>
+<body>
+  Server: <input type="text" id="serverIp" value="">
+  <button type="button" id="reconnectButton" onclick="reconnectClick()">Fetch</button>
+  <br>
+  <br>
+  <div id="remotevideo">
+    <video id="remote-video" width=320 autoplay mute></video>    
+    <video id="local-video" width=180 autoplay mute></video>    
+    <div id="status"></div>
+  </div>
+  <br>
+  <textarea id="log" style='width:400px; max-width:800px; min-width:300px; max-height:800px; min-height:200px; height:300px'></textarea>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <title>Producer</title>
+  <script type="text/javascript" src="../common.js"></script>
+  <script src="../socket.io-client/socket.io.js"></script>
+  <script src="../webrtc-js/adapter.js"></script>
+  <script src="index.js"></script>
+  <script>
+  
+  setupSocket(defaultServerUrl);
+  navigator.getUserMedia({audio:true, video:true}, gotUserMedia, onErrorCallback);
+  
+  window.onload = function(){
+    trace('getting user media. please, allow access to the media devices.');
+  };
+
+  { // load device lists
+    var audioDevicesList;
+    var videoDevicesList;
+
+    getAudioDevices(function (audioDevices){
+      audioDevicesList = audioDevices;
+      audioList = document.getElementById('audiolist');
+      for (var idx in audioDevices)
+      {
+        var audioDevice = audioDevices[idx];
+        var option = document.createElement('option');
+        option.text = audioDevice.label || 'Microphone '+idx;
+        audioList.add(option);
+      }
+    });
+
+    getVideoDevices(function (videoDevices){
+      videoDevicesList = videoDevices;
+      videoList = document.getElementById('videolist');
+      for (var idx in videoDevices)
+      {
+        var videoDevice = videoDevices[idx];
+        var option = document.createElement('option');
+        option.text = videoDevice.label || 'Camera '+idx;
+        videoList.add(option);
+      }
+    });
+  }
+
+  function startPublishingClick(){
+    var audioList = document.getElementById('audiolist');
+    var videoList = document.getElementById('videolist');
+    var audioSource = audioDevicesList[audioList.selectedIndex];
+    var videoSource = videoDevicesList[videoList.selectedIndex];
+    var constraints = {};
+    constraints.audio = { optional: [{sourceId: audioSource.id}]};
+    constraints.video = { optional: [{sourceId: videoSource.id}]};
+    navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
+  }
+
+  function reconnectClick(){
+    var serverUrl = document.getElementById('serverUrl').value;
+    shutdownSocket();
+    setupSocket(serverUrl);
+  }
+  </script>
+</head>
+<body>
+  <div id='settings' style='display:none'>
+    <!-- Server: <input type="text" id="serverUrl" value="">
+    <button type="button" id="reconnectButton" onclick="reconnectClick()">Reconnect</button> 
+    <br> -->
+    <select id="audiolist">
+    </select>
+    <select id="videolist">
+    </select>
+    <button type="button" id="publishButton" onclick="startPublishingClick()">Publish</button>
+    <br>
+  </div>
+
+  <div id="localvideo">
+    <video id="local-video" width=320 autoplay muted></video>    
+    <video id="remote-video" width=180 autoplay muted></video>    
+    <div id="status"></div>
+  </div>
+  <br>
+  <textarea id="log" style='width:400px; max-width:800px; min-width:300px; max-height:800px; min-height:200px; height:300px'></textarea>
+</body>
+</html>
