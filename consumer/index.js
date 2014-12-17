@@ -146,7 +146,7 @@ document.onkeypress = function (event){
 
 // video-to-canvas magic...
 // see more on http://html5hub.com/using-the-getusermedia-api-with-the-html5-video-and-canvas-elements/
-function setupVideoToCanvasPorcessing(){
+function setupVideoToCanvasProcessing(){
 	var isStreaming = false,
 	v = document.getElementById('remote-video'),
 	c = document.getElementById('video-canvas'),
