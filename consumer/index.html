@@ -10,6 +10,7 @@
 
   window.onload = function () {
     document.getElementById('serverIp').value = defaultProducerAddress;
+    setupVideoToCanvasPorcessing();
   }
 
   function reconnectClick(){
@@ -25,7 +26,8 @@
   <br>
   <br>
   <div id="remotevideo">
-    <video id="remote-video" width=320 autoplay></video>
+    <video id="remote-video" width=320 autoplay style="visibility:hidden;"></video>
+    <canvas id="video-canvas"></canvas>
     <div id="status"></div>
   </div>
   <br>
