@@ -10,10 +10,6 @@
 
   window.onload = function () {
     document.getElementById('serverIp').value = defaultProducerAddress;
-    navigator.getUserMedia({audio:false, video:true}, gotUserMedia, 
-      function (error){
-        logError('error getting media: '+error.toString())
-      });
   }
 
   function reconnectClick(){

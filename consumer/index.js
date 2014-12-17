@@ -67,34 +67,26 @@ function connect(address){
 			}
 		});
 
-		socket.on('answer', function (answer){
-			trace('got answer from producer');
-			pc.setRemoteDescription(new RTCSessionDescription(answer),
+		socket.on('offer', function (offer){
+			trace('got offer from producer');
+			pc.setRemoteDescription(new RTCSessionDescription(offer),
 				function (){
-					trace('remote description set');
+					trace('creating answer...');
+					pc.createAnswer(function (sessionDescription){
+						pc.setLocalDescription(sessionDescription);
+						trace('sending answer to producer');
+						socket.emit('answer', sessionDescription);
+					});
 				},
 				function (error){
-					trace('error setting remote description: '+error.toString());
+					trace('error setting remote description');
 				});
 		});
 	});
 }
 
-function gotUserMedia(stream){
-	trace('got stream. audio tracks: '+stream.getAudioTracks().length + ' video tracks: '+stream.getVideoTracks().length);
-	localStream = stream;
-	attachMediaStream(document.getElementById('local-video'), stream);
-
-	if (pc)
-	{
-		pc.addStream(stream);
-		if (producerReady)
-			createAndSendOffer();
-	}
-}
-
 function startSession(){
-	trace('creating session...');
+	trace('waiting for offer...');
 	pc = new RTCPeerConnection(
 		{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] },
 		{ 'optional': [{DtlsSrtpKeyAgreement: true}] });
@@ -108,16 +100,8 @@ function startSession(){
 	}
 
 	pc.onicecandidate = function (event){
-		trace('new ICE candidate '+event.candidate);
+		trace('new ICE candidate '+JSON.stringify(event.candidate));
 		socket.emit('ice', event.candidate);
-	}
-
-	if (localStream)
-	{
-		pc.addStream(localStream);
-
-		if (producerReady)
-			createAndSendOffer();
 	}
 }
 
@@ -134,30 +118,6 @@ function waitUntilRemoteStreamStartsFlowing()
 		trace('waiting for remote stream to start...');
 		setTimeout(waitUntilRemoteStreamStartsFlowing, 50);
 	}
-}
-
-function createAndSendOffer(){
-	pc.createOffer(function (sessionDescription){
-		pc.setLocalDescription(sessionDescription,
-			function (){
-				localDescription = sessionDescription;
-				socket.emit('offer', sessionDescription);
-				trace('sending offer...');		
-			},
-			function (error){
-				logError("couldn't set local description: "+error.toString());
-			},
-			{ 
-				optional: [], 
-				mandatory: {
-					OfferToReceiveAudio: true,
-					OfferToReceiveVideo: true
-				}
-			});
-	},
-	function (error){
-		logError('error creating offer: '+error.toString());
-	});
 }
 
 function stopSession(){

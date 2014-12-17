@@ -16,8 +16,9 @@ io.on('connection', function(socket){
     consumerId = consumerIds[this.id];
     if (consumerId)
     {
-      console.log('user '+consumerId+' disconnected ');    
-      producerSocket.emit('bye', {from:consumerId, data:{}});
+      console.log('user '+consumerId+' disconnected ');   
+      if (producerSocket) 
+        producerSocket.emit('bye', {from:consumerId, data:{}});
 
       delete consumerIds[this.id]
       delete consumerSockets[consumerId]
@@ -35,9 +36,12 @@ io.on('connection', function(socket){
      producerSocket = socket;
      io.emit('producer alive', {for: 'everyone'});
      console.log('producer connected');
-   }
-   else
-   {	
+
+     for (var consumerId in Object.keys(consumerSockets))
+      producerSocket.emit('new consumer', {from:consumerId, data:{}});
+  }
+  else
+  {	
     if (!consumerIds[socket.id])
     {
   		var consumerId = 'consumer'+consumerNo; //Object.keys(consumerIds).length;
@@ -46,10 +50,17 @@ io.on('connection', function(socket){
       consumerSockets[consumerId] = socket;
       socket.emit('id', consumerId);
 
+      console.log(consumerId+' connected. total consumers: '+Object.keys(consumerIds).length);
+      console.log('sending request to producer...');
+      
       if (producerSocket)
+      {
         socket.emit('producer alive', {});
+        producerSocket.emit('new consumer', {from:consumerId, data:{}});
+      }
+      else
+        console.log('producer is not connected yet');
 
-      console.log('new consumer '+consumerId+' connected. total consumers: '+Object.keys(consumerIds).length);
     }
     else
     {
@@ -59,18 +70,23 @@ io.on('connection', function(socket){
 });
 
   socket.on('offer', function(msg){
-    console.log('received offer from '+consumerIds[socket.id]+': '+JSON.stringify(msg));
-    producerSocket.emit('offer', {from: consumerIds[socket.id], data: msg});
+    if (socket == producerSocket)
+    {
+      console.log('received offer from producer '+JSON.stringify(msg.data));
+      sendToConsumer(msg.to, 'offer', msg.data);
+    }
+    else
+      console.error("violation: consumers aren't allowed to send offers");
   });
 
   socket.on('answer', function(msg){
     if (socket == producerSocket)
-    {
-      console.log('answer from producer to '+msg.to+': '+JSON.stringify(msg.data));
-      sendToConsumer(msg.to, 'answer', msg.data);
-    }
+      console.error("producer is not allowed to send answers");
     else
-      console.error('violation: got answer msg from consumer');
+    {
+      console.log('sending answer from '+consumerIds[socket.id]+': '+JSON.stringify(msg));
+      producerSocket.emit('answer', {from: consumerIds[socket.id], data: msg});
+    }
   });
 
   socket.on('ice', function(msg){

@@ -12,7 +12,7 @@ var socket;
 var peerConnections = [];
 var consumers = [];
 var localStream;
-var pendingOffers = [];
+var pendingRequests = [];
 
 var qvgaConstraints  = {
 	video: {
@@ -45,20 +45,42 @@ function setupSocket(url){
 	socket = io(url);
 	socket.emit('id', 'producer');
 
-	socket.on('offer', function(msg){
-		trace('got offer from '+msg.from+' : '+JSON.stringify(msg.data));
-
-		if (!peerConnections[msg.from])
+	socket.on('new consumer', function (msg){
+		trace('new request from '+msg.from);
+		if (!localStream)
 		{
-			var pc = createPeerConnection(msg);
-			consumers[pc] = msg.from;
+			trace('media is not ready yet. adding request from '+msg.from+' to pending');
+			pendingRequests[pendingRequests.length] = msg.from;
 		}
 		else
-			logError('violation: got second offer from the same consumer');
+		{
+			if (!peerConnections[msg.from])
+			{
+				createPeerConnection(msg.from);
+			}
+			else
+				logError('violation: got second request from the same consumer');
+		}
+	});
+
+	socket.on('answer', function(msg){
+		trace('got answer from '+msg.from);
+		var pc = peerConnections[msg.from];
+
+		if (pc)
+		{
+			pc.setRemoteDescription(new RTCSessionDescription(msg.data),
+				function (){
+					trace('remote description set');
+				},
+				function (error){
+					trace('error setting remote description: '+error.toString());
+				});
+		}
 	});
 
 	socket.on('ice', function (msg){
-		trace('received ICE from '+msg.from+': '+msg.data);
+		trace('received ICE from '+msg.from+': '+JSON.stringify(msg.data));
 		var consumerPc = peerConnections[msg.from];
 
 		if (consumerPc)
@@ -95,18 +117,12 @@ function setupSocket(url){
 	});
 }
 
-function createPeerConnection(msg){
+function createPeerConnection(consumerId){
 	var pc = new RTCPeerConnection(
 		{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] },
 		{ 'optional': [{DtlsSrtpKeyAgreement: true}] });
-	peerConnections[msg.from] = pc;
-	// trace('PC: '+peerConnections[msg.from]+' msg: '+JSON.stringify(msg)+' PCs: '+JSON.stringify(peerConnections));
-
-	pc.onaddstream = function (obj){
-		trace('remote stream added. do nothing '+' video tracks: '+obj.stream.getVideoTracks().length+
-			' audio tracks: '+obj.stream.getAudioTracks().length);
-		attachMediaStream(document.getElementById('remote-video'), obj.stream);
-	}
+	peerConnections[consumerId] = pc;
+	consumers[pc] = consumerId;
 
 	pc.onicecandidate = function (event){
 		trace('new ICE candidate '+event.candidate);
@@ -117,28 +133,28 @@ function createPeerConnection(msg){
 		}
 	}
 
+	if (localStream)
+	{
+		trace('creating offer...');
 
-	trace('setting remote description...');
-	pc.setRemoteDescription(new RTCSessionDescription(msg.data),
-		function (){
-			trace('remote description set');
-			if (localStream)
-				sendAnswer(pc);
-			else
-			{
-				trace('stream is not ready yet. pending offer from '+msg.from);
-				pendingOffers[pendingOffers.length] = msg.from;
-			}
-		},
-		function (error){
-			trace('error setting remote description: '+error.toString());
-		});
+		pc.addStream(localStream);
+		pc.createOffer(
+			function (description){
+				pc.setLocalDescription(description);
+				var consumerId = consumers[pc];
+
+				trace('sending offer to '+consumerId);
+				socket.emit('offer', {to:consumerId, data:description});
+			},
+			function (error) {
+				logError('error creating offer '+error.toString());
+			});
+	}
 
 	return pc;
 }
 
 function sendAnswer(pc){
-	pc.addStream(localStream);
 	trace('creating answer...');
 	pc.createAnswer(function (description){
 		trace('generated answer');
@@ -152,22 +168,20 @@ function sendAnswer(pc){
 	{
 		optional: [],
 		mandatory: {
-			OfferToReceiveAudio: true,
-			OfferToReceiveVideo: true
+			offerToReceiveAudio: true,
+			offerToReceiveVideo: true
 		}
 	});
 }
 
-function replyPendingOffers(){
-	trace('answering pending offers for '+JSON.stringify(pendingOffers));
+function replyPendingRequests(){
+	trace('answering pending requests...');
 
-	for (var idx in Object.keys(pendingOffers))
+	for (var idx in Object.keys(pendingRequests))
 	{
-		var consumerId = pendingOffers[idx];
-		var consumerPc = peerConnections[consumerId];
-		sendAnswer(consumerPc);
+		var consumerId = pendingRequests[idx];
+		createPeerConnection(consumerId);		
 	}
-	pendingOffers = [];
 }
 
 function shutdownSocket(){
@@ -181,14 +195,16 @@ function onErrorCallback(error){
 
 function gotUserMedia(stream){
 	trace('got stream. audio tracks: '+stream.getAudioTracks().length + ' video tracks: '+stream.getVideoTracks().length);
+	trace('using audio device: '+stream.getAudioTracks()[0].label);
+	trace('using video device: '+stream.getVideoTracks()[0].label);
 	
 	localStream = stream;
 	var localVideo = document.querySelector('#local-video');
 	attachMediaStream(localVideo, stream);
 
-	if (pendingOffers && pendingOffers.length > 0)
+	if (pendingRequests && pendingRequests.length > 0)
 	{
-		replyPendingOffers();
+		replyPendingRequests();
 	}
 	else
 	{
