@@ -64,7 +64,7 @@ function setupSocket(url){
 	});
 
 	socket.on('answer', function(msg){
-		trace('got answer from '+msg.from);
+		trace('got answer from '+msg.from + ': '+msg.data.sdp);
 		var pc = peerConnections[msg.from];
 
 		if (pc)
@@ -80,25 +80,16 @@ function setupSocket(url){
 	});
 
 	socket.on('ice', function (msg){
-		trace('received ICE from '+msg.from+': '+JSON.stringify(msg.data));
+		var ice = msg.data;
+		trace('received ICE from '+msg.from+': '+JSON.stringify(ice));
 		var consumerPc = peerConnections[msg.from];
 
 		if (consumerPc)
 		{
-			if (msg.candidate)
-			{
-				consumerPc.addIceCandidate(
-					new RTCIceCandidate({
-						sdpMLineIndex: msg.data.sdpMLineIndex,
-						candidate: msg.data.candidate
-					}), 
-					function (){
-						trace('remote candidate added successfully')
-					},
-					function (){
-						trace('error on adding remote candidate');
-					});
-			}
+			if (ice && ice.candidate)
+				addIce(consumerPc, ice);
+			else
+				logError('bad ICE');
 		}
 		else
 		{
@@ -125,7 +116,7 @@ function createPeerConnection(consumerId){
 	consumers[pc] = consumerId;
 
 	pc.onicecandidate = function (event){
-		trace('new ICE candidate '+event.candidate);
+		trace('new ICE candidate '+JSON.stringify(event.candidate));
 		if (event.candidate)
 		{
 			var consumerId = consumers[pc];
@@ -148,6 +139,12 @@ function createPeerConnection(consumerId){
 			},
 			function (error) {
 				logError('error creating offer '+error.toString());
+			},
+			{
+				'mandatory': {
+					'OfferToReceiveAudio':true,
+					'OfferToReceiveVideo':true 
+					}
 			});
 	}
 

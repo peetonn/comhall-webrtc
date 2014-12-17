@@ -7,6 +7,9 @@
 //  Author:  Peter Gusev
 //
 
+var allowSettingRemoteIce = false;
+var pendingIce = [];
+
 function toggleElement(element){
 	if (element.style.display == 'none')
 		element.style.display = 'inline';
@@ -26,4 +29,31 @@ function logError(text){
 	var now = (window.performance.now() / 1000).toFixed(3);
 	textArea.value += now + '\tERROR:\t' + text + '\n';
 	console.error(text);
+}
+
+function addIce(pc, msg)
+{
+	trace('adding remote ICE...');
+	pc.addIceCandidate(
+		new RTCIceCandidate({
+			sdpMLineIndex: msg.sdpMLineIndex,
+			candidate: msg.candidate
+		}), 
+		function (){
+			trace('remote candidate added successfully')
+		},
+		function (){
+			trace('error on adding remote candidate');
+		});	
+}
+
+function setPendingRemoteIce(pc){
+	if (pendingIce.length)
+		trace('setting pending ICE candidates...');
+
+	for (var idx in Object.keys(pendingIce))
+	{
+		var iceCandidate = pendingIce[idx];
+		addIce(pc, iceCandidate);
+	}
 }

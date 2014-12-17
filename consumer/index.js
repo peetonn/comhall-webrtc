@@ -44,33 +44,30 @@ function connect(address){
 		socket.on('ice', function(msg){
 			if (!pc) 
 			{
+
 				logError('got ICE candidate but peer connection is not ready');
 				return;
 			}
 			else
 			{
-				trace('setting remote ICE candidate');
+				trace('setting remote ICE candidate: '+JSON.stringify(msg));
 				if (msg.candidate)
 				{
-					pc.addIceCandidate(
-						new RTCIceCandidate({
-							sdpMLineIndex: msg.sdpMLineIndex,
-							candidate: msg.candidate
-						}), 
-						function (){
-							trace('remote candidate added successfully')
-						},
-						function (){
-							trace('error on adding remote candidate');
-						});
+					if (allowSettingRemoteIce)
+						addIce(pc, msg);
+					else
+						pendingIce[pendingIce.length] = msg;
 				}
 			}
 		});
 
 		socket.on('offer', function (offer){
-			trace('got offer from producer');
+			trace('got offer from producer: '+offer.sdp);
 			pc.setRemoteDescription(new RTCSessionDescription(offer),
 				function (){
+					allowSettingRemoteIce = true;
+					setPendingRemoteIce(pc);
+
 					trace('creating answer...');
 					pc.createAnswer(function (sessionDescription){
 						pc.setLocalDescription(sessionDescription);
