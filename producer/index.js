@@ -76,6 +76,8 @@ function setupSocket(url){
 				function (error){
 					trace('error setting remote description: '+error.toString());
 				});
+			
+			updateStatus();
 		}
 	});
 
@@ -105,10 +107,12 @@ function setupSocket(url){
 			delete consumers[peerConnections[msg.from]];
 			delete peerConnections[msg.from];
 		}
+		updateStatus();
 	});
 }
 
 function createPeerConnection(consumerId){
+	trace('creating peer connection for '+consumerId);
 	var pc = new RTCPeerConnection(
 		{ "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] },
 		{ 'optional': [{DtlsSrtpKeyAgreement: true}] });
@@ -151,26 +155,6 @@ function createPeerConnection(consumerId){
 	return pc;
 }
 
-function sendAnswer(pc){
-	trace('creating answer...');
-	pc.createAnswer(function (description){
-		trace('generated answer');
-		pc.setLocalDescription(description);
-		var consumerId = consumers[pc];
-		socket.emit('answer', {to: consumerId, data: description});
-	},
-	function (error){
-		logError('error creating answer '+error.toString())
-	},
-	{
-		optional: [],
-		mandatory: {
-			offerToReceiveAudio: true,
-			offerToReceiveVideo: true
-		}
-	});
-}
-
 function replyPendingRequests(){
 	trace('answering pending requests...');
 
@@ -194,6 +178,7 @@ function gotUserMedia(stream){
 	trace('got stream. audio tracks: '+stream.getAudioTracks().length + ' video tracks: '+stream.getVideoTracks().length);
 	trace('using audio device: '+stream.getAudioTracks()[0].label);
 	trace('using video device: '+stream.getVideoTracks()[0].label);
+	document.getElementById('currentDevices').innerHTML = 'Current audio source: '+stream.getAudioTracks()[0].label+'<br>Current video source:'+stream.getVideoTracks()[0].label;
 	
 	localStream = stream;
 	var localVideo = document.querySelector('#local-video');
@@ -231,14 +216,13 @@ function getMediaSources(type, callback){
 				var constraints = {};
 
 				if (media_source.kind == type) {
-            // trace('media source of type ' + type + ' id '+media_source.id + ' label '+media_source.label);
-            sources[idx] = media_source;
-            idx++;
-        }
-    }
+            		sources[idx] = media_source;
+            		idx++;
+        		} // if
+    		} // for
 
-    callback(sources);
-});	
+    	callback(sources);
+	});	
 
 	return sources;
 }
@@ -253,6 +237,13 @@ function toggleSettings(){
 
 function toggleVideo(){
 	toggleElement(document.getElementById('local-video'));
+}
+
+function updateStatus(){
+	if (Object.size(peerConnections) == 0)
+		setStatus('Waiting for incoming connections...');
+	else
+		setStatus('Currently active consumers: '+Object.size(peerConnections));
 }
 
 document.onkeypress = function (event){

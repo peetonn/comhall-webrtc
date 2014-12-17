@@ -7,7 +7,8 @@
 //  Author:  Peter Gusev
 //
 
-var defaultProducerAddress = "127.0.0.1:3001";
+var defaultProducerAddress = getCookie('serverIp') || "127.0.0.1";
+var port = 3001;
 var socket;
 var pc;
 var producerReady = false;
@@ -16,8 +17,10 @@ var localDescription;
 var localStream;
 
 function connect(address){
-	trace('connecting to '+ address);
-	socket = io('http://'+address);
+	setCookie('serverIp', address, 30);
+	
+	trace('connecting to '+ address+':'+port);
+	socket = io('http://'+address+':'+port);
 
 	socket.on('connect', function(){
 		trace('connected');
