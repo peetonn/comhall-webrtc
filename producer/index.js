@@ -15,29 +15,23 @@ var localStream;
 var pendingRequests = [];
 
 var qvgaConstraints  = {
-	video: {
-		mandatory: {
-			maxWidth: 320,
-			maxHeight: 180
-		}
+	mandatory: {
+		maxWidth: 320,
+		maxHeight: 180
 	}
 };
 
 var vgaConstraints  = {
-	video: {
-		mandatory: {
-			maxWidth: 640,
-			maxHeight: 360
-		}
+	mandatory: {
+		maxWidth: 640,
+		maxHeight: 360
 	}
 };
 
 var hdConstraints  = {
-	video: {
-		mandatory: {
-			minWidth: 1280,
-			minHeight: 720
-		}
+	mandatory: {
+		minWidth: 1280,
+		minHeight: 720
 	}
 };
 

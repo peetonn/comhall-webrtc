@@ -9,7 +9,7 @@
   <script>
   
   setupSocket(defaultServerUrl);
-  navigator.getUserMedia({audio:true, video:true}, gotUserMedia, onErrorCallback);
+  navigator.getUserMedia({audio:true, video:hdConstraints}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
     trace('getting user media. please, allow access to the media devices.');
