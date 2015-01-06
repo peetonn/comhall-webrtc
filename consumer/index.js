@@ -160,9 +160,6 @@ function setupVideoToCanvasProcessing(){
       		if (v.videoWidth > 0) h = v.videoHeight / (v.videoWidth / w);
       		c.setAttribute('width', w);
       		c.setAttribute('height', h);
-      		// Reverse the canvas image
-      		con.translate(w, 0);
-      		con.scale(-1, 1);
       		isStreaming = true;
   		}
 	}, false);
