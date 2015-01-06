@@ -9,9 +9,13 @@
   <script>
   
   setupSocket(defaultServerUrl);
-  navigator.getUserMedia({audio:true, video:hdConstraints}, gotUserMedia, onErrorCallback);
+  console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
+  navigator.getUserMedia({audio:true, video:{mandatory:{ minWidth:gumWidth, minHeight:gumHeight, minFrameRate:gumFps}}}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
+    document.getElementById('gumWidth').value = gumWidth; 
+    document.getElementById('gumHeight').value = gumHeight;
+    document.getElementById('gumFPS').value = gumFps;
     trace('getting user media. please, allow access to the media devices.');
   };
 
@@ -50,8 +54,22 @@
     var audioSource = audioDevicesList[audioList.selectedIndex];
     var videoSource = videoDevicesList[videoList.selectedIndex];
     var constraints = {};
+    
+    gumWidth = document.getElementById('gumWidth').value;
+    gumHeight = document.getElementById('gumHeight').value;
+    gumFps = document.getElementById('gumFPS').value;
+
+    setCookie('gumWidth', gumWidth, 30);
+    setCookie('gumHeight', gumHeight, 30);
+    setCookie('gumFps', gumFps, 30);
+
     constraints.audio = { optional: [{sourceId: audioSource.id}]};
-    constraints.video = { optional: [{sourceId: videoSource.id}]};
+    constraints.video = { 
+      mandatory:{ minWidth:gumWidth, minHeight:gumHeight, minFrameRate:gumFps},
+      optional: [{sourceId: videoSource.id}]
+    };
+    
+    trace('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
     navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
   }
 
@@ -64,15 +82,14 @@
 </head>
 <body>
   <div id='settings' style='display:none'>
-    <!-- Server: <input type="text" id="serverUrl" value="">
-    <button type="button" id="reconnectButton" onclick="reconnectClick()">Reconnect</button> 
-    <br> -->
     <select id="audiolist">
     </select>
     <select id="videolist">
     </select>
     <button type="button" id="publishButton" onclick="startPublishingClick()">Publish</button>
     <br>
+    <br>
+    Width: <input type="text" id="gumWidth" value=""> Height: <input type="text" id="gumHeight" value=""> FPS: <input type="text" id="gumFPS" value="">
     <p id='currentDevices'></p>
   </div>
 

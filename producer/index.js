@@ -7,6 +7,10 @@
 //  Author:  Peter Gusev
 //
 
+var gumWidth = getCookie('gumWidth') || "1280";
+var gumHeight = getCookie('gumHeight') || "720";
+var gumFps = getCookie('gumFps') || "30";
+
 var defaultServerUrl = 'http://localhost:3001';
 var socket;
 var peerConnections = [];
@@ -172,11 +176,20 @@ function gotUserMedia(stream){
 	trace('got stream. audio tracks: '+stream.getAudioTracks().length + ' video tracks: '+stream.getVideoTracks().length);
 	trace('using audio device: '+stream.getAudioTracks()[0].label);
 	trace('using video device: '+stream.getVideoTracks()[0].label);
-	document.getElementById('currentDevices').innerHTML = 'Current audio source: '+stream.getAudioTracks()[0].label+'<br>Current video source:'+stream.getVideoTracks()[0].label;
 	
 	localStream = stream;
 	var localVideo = document.querySelector('#local-video');
 	attachMediaStream(localVideo, stream);
+
+	localVideo.addEventListener("playing", function () {
+        setTimeout(function () {
+            trace('video size:' + localVideo.videoWidth+'X'+localVideo.videoHeight);
+			document.getElementById('currentDevices').innerHTML = 'Current audio source: '+stream.getAudioTracks()[0].label+'<br>Current video source:'+stream.getVideoTracks()[0].label;            
+            document.getElementById('currentDevices').innerHTML += '<br>Video size: '+localVideo.videoWidth+'X'+localVideo.videoHeight;
+        }, 500);
+    });
+	
+
 
 	if (pendingRequests && pendingRequests.length > 0)
 	{
