@@ -16,7 +16,7 @@ $ python -m SimpleHTTPServer 8000
 </pre>
 3. Open [localhost:8000/producer](http://localhost:8000) page in browser (Chrome)
 
->Hint: while on producer's page, press 's' to see currently used device and change it if you need to
+>Hint: while on producer's page, press 's' to see **custom settings panel**
 
 >Hint: while on producer's page, press 'l' to see the current log
 
@@ -52,3 +52,23 @@ $ npm install --save socket.io
 <pre>
 $ node server/index.js
 </pre>
+
+Two cameras support
+===
+In case if there is a need for publishing two streams from different devices, two producer instances can be launched on the same machine in separate browser tabs with different port options enabled on the settings panel (press 's' to reveal it on the producer's page):
+1. Run PTZ camera server:
+<pre>
+$ node server/index.js 3001
+</pre>
+2. In separate Terminal window, run WebCamera server:
+<pre>
+$ node server/index.js 3002
+</pre>
+3. Open [localhost:8000/producer](http://localhost:8000) page in **first** browser tab
+    - Press 's'
+    - Choose '3001 (PTZ camera)' server port option
+    - Configure producer to acquire video from PTZ camera by choosing appropriate device from the list
+4. Open [localhost:8000/producer](http://localhost:8000) page in **second** browser tab
+    - Press 's'
+    - Choose '3002 (Web camera)' server port option
+    - Configure producer to acquire video from web camera by choosing appropriate device from the list
