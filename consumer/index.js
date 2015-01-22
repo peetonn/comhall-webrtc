@@ -8,7 +8,6 @@
 //
 
 var defaultProducerAddress = getCookie('serverIp') || "127.0.0.1";
-var port = (getChosenCamera() == 'ptz')?ptzCameraPort:webCameraPort;
 var socket;
 var pc;
 var producerReady = false;
@@ -19,8 +18,8 @@ var localStream;
 function connect(address){
 	setCookie('serverIp', address, 30);
 	
-	trace('connecting to '+ address+':'+port);
-	socket = io('http://'+address+':'+port);
+	trace('connecting to '+ address+':'+nodeServerPort);
+	socket = io('http://'+address+':'+nodeServerPort);
 
 	socket.on('connect', function(){
 		trace('connected');

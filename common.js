@@ -10,8 +10,15 @@
 var allowSettingRemoteIce = false;
 var pendingIce = [];
 var chosenCamera = getChosenCamera() || 'ptz';
-var ptzCameraPort = 3001;
-var webCameraPort = 3002;
+var nodeServerPort = 3001;
+
+function initPortFromUrl(){
+	var url = document.URL;
+	var portNum = getParameterByName('port');
+
+	if (portNum)
+		nodeServerPort = portNum;
+}
 
 function toggleElement(element){
 	if (element.style.display == 'none')
@@ -103,4 +110,11 @@ function setChosenCamera(camera){
 function getChosenCamera(camera){
 	chosenCamera = getCookie('cameraChoice');
 	return chosenCamera;
+}
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
