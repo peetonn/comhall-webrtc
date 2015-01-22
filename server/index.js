@@ -15,17 +15,24 @@ io.on('connection', function(socket){
   socket.on('id', function(msg){
     if (msg == 'producer')
     {
-      producerSocket = socket;
-      io.emit('producer alive', {for: 'everyone'});
-      console.log('producer connected');
-
-      for (var key in consumerIds)
+      if (!producerSocket)
       {
-        console.log('KEY '+key+' VALUE '+consumerIds[key]);
-        producerSocket.emit('new consumer', {from:consumerIds[key], data:{}});
-      }
+        producerSocket = socket;
+        io.emit('producer alive', {for: 'everyone'});
+        console.log('producer connected');
 
-      setProducerMessageHandlers(socket);
+        for (var key in consumerIds)
+        {
+          console.log('KEY '+key+' VALUE '+consumerIds[key]);
+          producerSocket.emit('new consumer', {from:consumerIds[key], data:{}});
+        }
+
+        setProducerMessageHandlers(socket);
+      }
+      else
+      {
+        console.log('producer already connected. ignore');
+      }
     } // if msg == 'producer'
     else // if msg == 'consumer'
     {	
@@ -97,6 +104,7 @@ function setProducerMessageHandlers(socket){
   socket.on('disconnect', function(){
     console.log('producer disconnected');
     io.emit('producer dead', {for: 'everyone'});
+    producerSocket = null;
   });
 }
 
