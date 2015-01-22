@@ -5,6 +5,7 @@ var producerSocket;
 var consumerIds = [];
 var consumerSockets = [];
 var consumerNo = 0;
+var port = (process.argv.length == 3)?process.argv[2]:3001;
 
 app.get('/', function(req, res){
   res.send('Use your local index.html');
@@ -99,8 +100,8 @@ function setProducerMessageHandlers(socket){
   });
 }
 
-http.listen(3001, function(){
-  console.log('listening on *:3001');
+http.listen(port, function(){
+  console.log('listening on *:'+port);
 });
 
 function sendToConsumer(consumerId, type, data){
