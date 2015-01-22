@@ -25,9 +25,13 @@ Consumer
 Consumer module is used for fetching media streams published by a remote producer.
 
 1. Make sure the server is [running](#server)
-2. Open [http://ether.remap.ucla.edu/step/commhall/consumer/](http://ether.remap.ucla.edu/step/commhall/consumer/) in the browser
-3. Type server's IP address in the field and press 'Fetch'
-4. Video stream should be received momentarily
+2. Make sure server is accessible through your network (for the date 1/22/2014 server's static IP address is 192.168.100.122)
+<pre>
+	$ ping 192.168.100.122
+</pre> 
+3. Open [http://192.168.100.122:8000/consumer/](http://192.168.100.122:8000/consumer/) in the browser
+4. Type server's IP address (192.168.100.122 as of 1/22/2014) in the field and press 'Fetch'
+5. Video stream should be received momentarily
 
 >Hint: while on consumer's page, press 'l' to see the current log
 
