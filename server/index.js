@@ -68,12 +68,14 @@ io.on('connection', function(socket){
 function setConsumerMessageHandlers(socket){
   socket.on('answer', function(msg){
     console.log('sending answer from '+consumerIds[socket.id]+': '+JSON.stringify(msg));
-    producerSocket.emit('answer', {from: consumerIds[socket.id], data: msg});
+    if (producerSocket)
+      producerSocket.emit('answer', {from: consumerIds[socket.id], data: msg});
   });
 
   socket.on('ice', function(msg){
     console.log('received ICE from '+consumerIds[socket.id]+': '+msg);
-    producerSocket.emit('ice', {from: consumerIds[socket.id], data: msg});
+    if (producerSocket)
+      producerSocket.emit('ice', {from: consumerIds[socket.id], data: msg});
   });  
 
   socket.on('disconnect', function(){
