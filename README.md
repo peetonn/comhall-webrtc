@@ -72,3 +72,5 @@ $ node server/index.js 3002
     - Press 's'
     - Choose '3002 (Web camera)' server port option
     - Configure producer to acquire video from web camera by choosing appropriate device from the list
+
+>Hint: Sometimes, when changing publishing camera on one producer tab while other producer is running, consumer may still receive old video stream. Try refreshing consumer page, chose correct camera and press 'Fetch' again.
