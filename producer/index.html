@@ -13,6 +13,8 @@
   navigator.getUserMedia({audio:true, video:{mandatory:{ minWidth:gumWidth, minHeight:gumHeight, minFrameRate:gumFps}}}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
+    document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
+    document.getElementById('webcam').checked = (chosenCamera == 'web');    
     document.getElementById('gumWidth').value = gumWidth; 
     document.getElementById('gumHeight').value = gumHeight;
     document.getElementById('gumFPS').value = gumFps;
@@ -73,15 +75,31 @@
     navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
   }
 
-  function reconnectClick(){
-    var serverUrl = document.getElementById('serverUrl').value;
+  function reconnectClick(serverUrl){
+    closeAllPeerConnections();
     shutdownSocket();
     setupSocket(serverUrl);
+  }
+
+  function cameraChosen(cam){
+    prevCamera = getChosenCamera();
+    setChosenCamera(cam);
+    document.getElementById('ptzcam').checked = (getChosenCamera() == 'ptz');
+    defaultServerUrl = (getChosenCamera() == 'ptz')?ptzcamServerUrl:webcamServerUrl;
+
+    if (prevCamera != getChosenCamera())
+      reconnectClick(defaultServerUrl);
   }
   </script>
 </head>
 <body>
   <div id='settings' style='display:none'>
+    <form action="">
+      Server port: <br>
+      <input type="radio" id="ptzcam" name="camera" value="ptzcamera" onclick="cameraChosen('ptz')">3001 (PTZ Camera) 
+      <input type="radio" id="webcam" name="camera" value="webcamera" onclick="cameraChosen('web')">3002 (Web Camera)
+    </form>
+    <br>
     <select id="audiolist">
     </select>
     <select id="videolist">

@@ -11,7 +11,10 @@ var gumWidth = getCookie('gumWidth') || "1280";
 var gumHeight = getCookie('gumHeight') || "720";
 var gumFps = getCookie('gumFps') || "30";
 
-var defaultServerUrl = 'http://localhost:3001';
+var ptzcamServerUrl = 'http://localhost:'+ptzCameraPort
+var webcamServerUrl = 'http://localhost:'+webCameraPort;
+var defaultServerUrl = (getChosenCamera() == 'ptz')?ptzcamServerUrl:webcamServerUrl;
+
 var socket;
 var peerConnections = [];
 var consumers = [];
@@ -40,8 +43,13 @@ var hdConstraints  = {
 };
 
 function setupSocket(url){
-	socket = io(url);
-	socket.emit('id', 'producer');
+	trace('connecting to '+url);
+	socket = io.connect(url, {'force new connection': true});
+
+	socket.on('connect', function(){
+		trace('connected');
+		socket.emit('id', 'producer');
+	});
 
 	socket.on('new consumer', function (msg){
 		trace('new request from '+msg.from);
@@ -153,6 +161,14 @@ function createPeerConnection(consumerId){
 	return pc;
 }
 
+function closeAllPeerConnections(){
+	trace('closing active peer connections...');
+	peerConnections = [];
+	consumers = [];
+	pendingRequests = [];
+	updateStatus();
+}
+
 function replyPendingRequests(){
 	trace('answering pending requests...');
 
@@ -164,7 +180,9 @@ function replyPendingRequests(){
 }
 
 function shutdownSocket(){
+	trace('shutting down connection...');
 	socket.disconnect();
+	socket = null;
 }
 
 function onErrorCallback(error){

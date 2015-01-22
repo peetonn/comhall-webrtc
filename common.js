@@ -9,6 +9,9 @@
 
 var allowSettingRemoteIce = false;
 var pendingIce = [];
+var chosenCamera = getChosenCamera() || 'ptz';
+var ptzCameraPort = 3001;
+var webCameraPort = 3002;
 
 function toggleElement(element){
 	if (element.style.display == 'none')
@@ -20,7 +23,10 @@ function toggleElement(element){
 function trace(text){
 	var textArea = document.getElementById('log');
 	var now = (window.performance.now() / 1000).toFixed(3);
-	textArea.value += now+'\tINFO: \t' + text + '\n';
+	
+	if (textArea)
+		textArea.value += now+'\tINFO: \t' + text + '\n';
+	
 	console.log(text);
 }
 
@@ -83,3 +89,18 @@ Object.size = function(obj) {
     }
     return size;
 };
+
+function setChosenCamera(camera){
+	setCookie('cameraChoice', camera, 30);
+	chosenCamera = camera;
+
+	if (chosenCamera == 'ptz')
+		port = ptzCameraPort;
+	else
+		port = webCameraPort;
+}
+
+function getChosenCamera(camera){
+	chosenCamera = getCookie('cameraChoice');
+	return chosenCamera;
+}
