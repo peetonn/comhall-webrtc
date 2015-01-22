@@ -8,6 +8,9 @@
 //
 
 var defaultProducerAddress = getCookie('serverIp') || "127.0.0.1";
+var chosenCamera = getChosenCamera() || 'ptz';
+var ptzCameraPort = 3001;
+var webCameraPort = 3002;
 var port = 3001;
 var socket;
 var pc;
@@ -105,8 +108,7 @@ function startSession(){
 	}
 }
 
-function waitUntilRemoteStreamStartsFlowing()
-{
+function waitUntilRemoteStreamStartsFlowing(){
 	var remote_video = document.getElementById('remote-video');
 	if (!(remote_video.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA 
 		|| remote_video.paused || remote_video.currentTime <= 0)) 
@@ -173,3 +175,18 @@ function setupVideoToCanvasProcessing(){
    		}, 33);
 	}, false);
 } // end of magic =(
+
+function setChosenCamera(camera){
+	setCookie('cameraChoice', camera, 30);
+	chosenCamera = camera;
+
+	if (chosenCamera == 'ptz')
+		port = ptzCameraPort;
+	else
+		port = webCameraPort;
+}
+
+function getChosenCamera(camera){
+	chosenCamera = getCookie('cameraChoice');
+	return chosenCamera;
+}
