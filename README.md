@@ -63,11 +63,13 @@ Secure HTTP server
 When producer page is loading, it gathers information about currently connected media devices in order to present them to a user in human-readable way. This involves calling [`getUserMedia`](http://www.html5rocks.com/en/tutorials/getusermedia/intro/#toc-history)  for each media device which results in asking explictily for the user permission to access a device. In cases when user has a lot of devices connected, she has to allow access to all of them each time the page is refresh, which is not a good UX in the end. In order to avoid this unpleasant scenario, Chrome can remember user's choice and never ask for permissions again on future page loadings. I.e. user will have to allow all the devices once at the first loading of the page. However, Chrome implements this feature only for webpages served using HTTPS. That's why `SimpleSecureHTTPServer.py` module was implemented.
 
 To start secure server:
+
 1. Generate private key and certificate for your server (**need to be done only once**):
 <pre>
     $ openssl req -new -x509 -keyout http_server/server.pem -out http_server/server.pem -days 365 -nodes
 </pre>
 >Note: When you'll be asked for *Common Name*, type IP address of the machine you're planning to run the server on.
+
 2. Start secure server:
 <pre>
     $ python http_server/SimpleSecureHTTPServer.py &lt;ip_address&gt; 8000
