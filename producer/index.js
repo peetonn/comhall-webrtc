@@ -16,6 +16,8 @@ var peerConnections = [];
 var consumers = [];
 var localStream;
 var pendingRequests = [];
+var audioDevicesList;
+var videoDevicesList;
 
 var qvgaConstraints  = {
 	mandatory: {
@@ -163,7 +165,7 @@ function createPeerConnection(consumerId){
 				'mandatory': {
 					'OfferToReceiveAudio':true,
 					'OfferToReceiveVideo':true 
-					}
+				}
 			});
 	}
 
@@ -209,12 +211,12 @@ function gotUserMedia(stream){
 	attachMediaStream(localVideo, stream);
 
 	localVideo.addEventListener("playing", function () {
-        setTimeout(function () {
-            trace('video size:' + localVideo.videoWidth+'X'+localVideo.videoHeight);
+		setTimeout(function () {
+			trace('video size:' + localVideo.videoWidth+'X'+localVideo.videoHeight);
 			document.getElementById('currentDevices').innerHTML = 'Current audio source: '+stream.getAudioTracks()[0].label+'<br>Current video source:'+stream.getVideoTracks()[0].label;            
-            document.getElementById('currentDevices').innerHTML += '<br>Video size: '+localVideo.videoWidth+'X'+localVideo.videoHeight;
-        }, 500);
-    });
+			document.getElementById('currentDevices').innerHTML += '<br>Video size: '+localVideo.videoWidth+'X'+localVideo.videoHeight;
+		}, 500);
+	});
 	
 
 
@@ -227,6 +229,62 @@ function gotUserMedia(stream){
 		trace('waiting for connections...');
 		setStatus('waiting for incoming connections...');
 	}
+}
+
+function initDeviceList(){
+			getAudioDevices(function (audioDevices){
+				audioDevicesList = audioDevices;
+				audioList = document.getElementById('audiolist');
+				var constraints = {};
+
+				for (var idx in audioDevices)
+				{
+					var audioDevice = audioDevices[idx];
+					
+					constraints.audio = {
+                		optional: [{ sourceId: audioDevice.id }]
+            		};
+
+					navigator.webkitGetUserMedia(constraints, function (stream) {
+            			var option = document.createElement('option');
+            			var label = stream.getAudioTracks()[0].label;
+
+            			audioDevice.label = label;
+            			option.text = label || 'Microphone '+audioList.length;
+						audioList.add(option);
+        			}, 
+        			function (error){
+        				trace('error '+error);
+        			});
+				}
+			});
+
+			getVideoDevices(function (videoDevices){
+				videoDevicesList = videoDevices;
+				videoList = document.getElementById('videolist');
+				var constraints = {};
+
+				for (var idx in videoDevices)
+				{
+					var videoDevice = videoDevices[idx];
+
+					constraints.video = {
+                		optional: [{ sourceId: videoDevice.id }]
+            		};
+
+					navigator.webkitGetUserMedia(constraints, function (stream) {
+            			var option = document.createElement('option');
+            			var label = stream.getVideoTracks()[0].label;
+
+            			videoDevice.label = label;
+            			option.text = label || 'Camera '+videoList.length;
+						videoList.add(option);
+        			}, 
+        			function (error){
+        				trace('error '+error);
+        			});
+				}
+			});
 }
 
 function getAudioDevices(callback){
@@ -247,16 +305,15 @@ function getMediaSources(type, callback){
 			var idx = 0;
 			for (var i = 0; i < media_sources.length; i++) {
 				var media_source = media_sources[i];
-				var constraints = {};
 
 				if (media_source.kind == type) {
-            		sources[idx] = media_source;
-            		idx++;
+					sources[idx] = media_source;
+					idx++;
         		} // if
     		} // for
 
-    	callback(sources);
-	});	
+    		callback(sources);
+    	});	
 
 	return sources;
 }
