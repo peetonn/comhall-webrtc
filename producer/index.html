@@ -15,9 +15,37 @@
     document.getElementById('gumWidth').value = gumWidth; 
     document.getElementById('gumHeight').value = gumHeight;
     document.getElementById('gumFPS').value = gumFps;
-    initDeviceList();
     trace('please, choose camera/mic and start publishing');
   };
+
+  { // load device lists
+    var audioDevicesList;
+    var videoDevicesList;
+
+    getAudioDevices(function (audioDevices){
+      audioDevicesList = audioDevices;
+      audioList = document.getElementById('audiolist');
+      for (var idx in audioDevices)
+      {
+        var audioDevice = audioDevices[idx];
+        var option = document.createElement('option');
+        option.text = audioDevice.label || 'Microphone '+idx;
+        audioList.add(option);
+      }
+    });
+
+    getVideoDevices(function (videoDevices){
+      videoDevicesList = videoDevices;
+      videoList = document.getElementById('videolist');
+      for (var idx in videoDevices)
+      {
+        var videoDevice = videoDevices[idx];
+        var option = document.createElement('option');
+        option.text = videoDevice.label || 'Camera '+idx;
+        videoList.add(option);
+      }
+    });
+  }
 
   function startPublishingClick(){
     var audioList = document.getElementById('audiolist');
