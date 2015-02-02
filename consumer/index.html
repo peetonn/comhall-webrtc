@@ -8,10 +8,10 @@
   <script type="text/javascript" src="index.js"></script>
   <script>
 
-  initPortFromUrl();
-
   window.onload = function () {
     document.getElementById('serverIp').value = defaultProducerAddress;
+    document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
+    document.getElementById('webcam').checked = (chosenCamera == 'web');
     setupVideoToCanvasProcessing();
   }
 
@@ -20,11 +20,23 @@
     connect(document.getElementById('serverIp').value);
   }
 
+  function cameraChosen(cam){
+    prevCamera = getChosenCamera();
+    setChosenCamera(cam);
+    document.getElementById('ptzcam').checked = (getChosenCamera() == 'ptz');
+  }
+
   </script>
 </head>
 <body>
   Server: <input type="text" id="serverIp" value="">
   <button type="button" id="reconnectButton" onclick="reconnectClick()">Fetch</button>
+  <br>
+  <br>
+  <form action="">
+    <input type="radio" id="ptzcam" name="camera" value="ptzcamera" onclick="cameraChosen('ptz')">PTZ Camera<br>
+    <input type="radio" id="webcam" name="camera" value="webcamera" onclick="cameraChosen('web')">Web Camera
+  </form>
   <br>
   <div id="remotevideo">
     <video id="remote-video" width=320 autoplay style="visibility:hidden;"></video>

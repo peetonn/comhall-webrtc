@@ -11,6 +11,10 @@ var gumWidth = getCookie('gumWidth') || "1280";
 var gumHeight = getCookie('gumHeight') || "720";
 var gumFps = getCookie('gumFps') || "30";
 
+var ptzcamServerUrl = 'http://localhost:'+ptzCameraPort
+var webcamServerUrl = 'http://localhost:'+webCameraPort;
+var defaultServerUrl = (getChosenCamera() == 'ptz')?ptzcamServerUrl:webcamServerUrl;
+
 var socket;
 var peerConnections = [];
 var consumers = [];
@@ -38,17 +42,12 @@ var hdConstraints  = {
 	}
 };
 
-function initNodeUrl(){
-	initPortFromUrl();
-	defaultServerUrl = 'http://localhost:'+nodeServerPort;
-}
-
 function setupSocket(url){
 	trace('connecting to '+url);
 	socket = io.connect(url, {'force new connection': true});
 
 	socket.on('connect', function(){
-		trace('connected to '+url);
+		trace('connected');
 		socket.emit('id', 'producer');
 	});
 
@@ -115,14 +114,6 @@ function setupSocket(url){
 			delete peerConnections[msg.from];
 		}
 		updateStatus();
-	});
-
-	socket.on('reconnecting', function() {
-		trace('trying to reconnect to '+url);
-	});
-
-	socket.on('error', function () {
-		trace('error on socket ('+url+')');
 	});
 }
 
