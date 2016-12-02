@@ -75,11 +75,11 @@ function setupSocket(url){
 
 		if (pc)
 		{
-			pc.setRemoteDescription(new RTCSessionDescription(msg.data),
-				function (){
+			pc.setRemoteDescription(new RTCSessionDescription(msg.data))
+			.then(function (){
 					trace('remote description set');
-				},
-				function (error){
+				})
+			.catch(function (error){
 					trace('error setting remote description: '+error.toString());
 				});
 			
@@ -139,22 +139,17 @@ function createPeerConnection(consumerId){
 		trace('creating offer...');
 
 		pc.addStream(localStream);
-		pc.createOffer(
-			function (description){
-				pc.setLocalDescription(description);
+		pc.createOffer().then(function (offer) {
+			trace('generated offer '+offer)
+			return pc.setLocalDescription(offer);
+			})
+		.then(function (){
 				var consumerId = consumers[pc];
-
 				trace('sending offer to '+consumerId);
-				socket.emit('offer', {to:consumerId, data:description});
-			},
-			function (error) {
+				socket.emit('offer', {to:consumerId, data:pc.localDescription});
+			})
+		.catch(function (error) {
 				logError('error creating offer '+error.toString());
-			},
-			{
-				'mandatory': {
-					'OfferToReceiveAudio':true,
-					'OfferToReceiveVideo':true 
-					}
 			});
 	}
 

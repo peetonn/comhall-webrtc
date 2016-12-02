@@ -66,19 +66,19 @@ function connect(address){
 
 		socket.on('offer', function (offer){
 			trace('got offer from producer: '+offer.sdp);
-			pc.setRemoteDescription(new RTCSessionDescription(offer),
-				function (){
+			pc.setRemoteDescription(new RTCSessionDescription(offer))
+			.then(function (){
+					trace('creating answer...');
 					allowSettingRemoteIce = true;
 					setPendingRemoteIce(pc);
-
-					trace('creating answer...');
-					pc.createAnswer(function (sessionDescription){
+					pc.createAnswer()
+					.then(function (sessionDescription){
 						pc.setLocalDescription(sessionDescription);
 						trace('sending answer to producer');
 						socket.emit('answer', sessionDescription);
 					});
-				},
-				function (error){
+				})
+			.catch(function (error){
 					trace('error setting remote description');
 				});
 		});
@@ -107,6 +107,7 @@ function startSession(){
 
 function waitUntilRemoteStreamStartsFlowing(){
 	var remote_video = document.getElementById('remote-video');
+	trace(remote_video.readyState+' '+remote_video.currentTime+' '+remote_video.paused)
 	if (!(remote_video.readyState <= HTMLMediaElement.HAVE_CURRENT_DATA 
 		|| remote_video.paused || remote_video.currentTime <= 0)) 
 	{
