@@ -10,7 +10,7 @@
   
   setupSocket(defaultServerUrl);
   console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
-  navigator.getUserMedia({audio:true, video:{mandatory:{ minWidth:gumWidth, minHeight:gumHeight, minFrameRate:gumFps}}}, gotUserMedia, onErrorCallback);
+  navigator.getUserMedia({audio:true, video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
     document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
@@ -67,8 +67,9 @@
 
     constraints.audio = { optional: [{sourceId: audioSource.id}]};
     constraints.video = { 
-      mandatory:{ minWidth:gumWidth, minHeight:gumHeight, minFrameRate:gumFps},
-      optional: [{sourceId: videoSource.id}]
+      width: {min: gumWidth}, height:{min: gumHeight}, 
+      minFrameRate:gumFps,
+      sourceId: videoSource.id
     };
     
     trace('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);

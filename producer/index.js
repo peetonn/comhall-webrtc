@@ -234,20 +234,21 @@ function getMediaSources(type, callback){
 	if (!MediaStreamTrack) 
 		logError('Current browser is incompatible for media sources enumeration');
 	else
-		MediaStreamTrack.getSources(function (media_sources) {
+		// MediaStreamTrack.getSources(function (media_sources) {
+		navigator.mediaDevices.enumerateDevices().then(function(media_sources) {
 			var idx = 0;
 			for (var i = 0; i < media_sources.length; i++) {
 				var media_source = media_sources[i];
 				var constraints = {};
 
-				if (media_source.kind == type) {
+				if (media_source.kind == type+'input') {
             		sources[idx] = media_source;
             		idx++;
         		} // if
     		} // for
 
     	callback(sources);
-	});	
+	});
 
 	return sources;
 }
