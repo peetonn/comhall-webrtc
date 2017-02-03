@@ -10,7 +10,7 @@
   
   setupSocket(defaultServerUrl);
   console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
-  navigator.getUserMedia({audio:true, video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
+  navigator.getUserMedia({audio:!getCookie('audioMute'), video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
     document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
@@ -18,6 +18,17 @@
     document.getElementById('gumWidth').value = gumWidth; 
     document.getElementById('gumHeight').value = gumHeight;
     document.getElementById('gumFPS').value = gumFps;
+
+    if (getCookie('audioMute') == undefined)
+    {
+      setCookie('audioMute', 'true', 30);
+      document.getElementById('mute').checked = true;
+    }
+    else
+    {
+      document.getElementById('mute').checked = (getCookie('audioMute') == 'true');
+    }
+
     trace('getting user media. please, allow access to the media devices.');
   };
 
@@ -65,13 +76,15 @@
     setCookie('gumHeight', gumHeight, 30);
     setCookie('gumFps', gumFps, 30);
 
-    constraints.audio = { optional: [{sourceId: audioSource.id}]};
+    var muteAudio = (getCookie('audioMute') == 'true');
+    constraints.audio = (muteAudio ? false : { optional: [{sourceId: audioSource.id}]} ); 
     constraints.video = { 
       width: {min: gumWidth}, height:{min: gumHeight}, 
       minFrameRate:gumFps,
       sourceId: videoSource.id
     };
     
+    trace('getUserMedia constraints: '+constraints);
     trace('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
     navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
   }
@@ -91,6 +104,12 @@
     if (prevCamera != getChosenCamera())
       reconnectClick(defaultServerUrl);
   }
+
+  function muteAudio(cb){
+    var audioMute = cb.checked;
+    setCookie('audioMute', audioMute, 30);
+    trace('set audio mute to '+getCookie('audioMute'));
+  }
   </script>
 </head>
 <body>
@@ -99,6 +118,7 @@
       Server port: <br>
       <input type="radio" id="ptzcam" name="camera" value="ptzcamera" onclick="cameraChosen('ptz')">3001 (PTZ Camera) 
       <input type="radio" id="webcam" name="camera" value="webcamera" onclick="cameraChosen('web')">3002 (Web Camera)
+      <input type="checkbox" id="mute" onclick="muteAudio(this)">Mute Audio
     </form>
     <br>
     <select id="audiolist">

@@ -187,7 +187,7 @@ function onErrorCallback(error){
 
 function gotUserMedia(stream){
 	trace('got stream. audio tracks: '+stream.getAudioTracks().length + ' video tracks: '+stream.getVideoTracks().length);
-	trace('using audio device: '+stream.getAudioTracks()[0].label);
+	trace('using audio device: '+ (stream.getAudioTracks().length > 0 ? stream.getAudioTracks()[0].label : 'none'));
 	trace('using video device: '+stream.getVideoTracks()[0].label);
 	
 	localStream = stream;
@@ -197,7 +197,9 @@ function gotUserMedia(stream){
 	localVideo.addEventListener("playing", function () {
         setTimeout(function () {
             trace('video size:' + localVideo.videoWidth+'X'+localVideo.videoHeight);
-			document.getElementById('currentDevices').innerHTML = 'Current audio source: '+stream.getAudioTracks()[0].label+'<br>Current video source:'+stream.getVideoTracks()[0].label;            
+			document.getElementById('currentDevices').innerHTML = 'Current audio source: '+
+				(stream.getAudioTracks().length ? stream.getAudioTracks()[0].label : 'none') +
+				'<br>Current video source:'+stream.getVideoTracks()[0].label;            
             document.getElementById('currentDevices').innerHTML += '<br>Video size: '+localVideo.videoWidth+'X'+localVideo.videoHeight;
         }, 500);
     });
