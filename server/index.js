@@ -1,4 +1,5 @@
 var app = require('express')();
+var fs = require('fs');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var producerSocket;
@@ -92,6 +93,8 @@ function setConsumerMessageHandlers(socket){
   });  
 }
 
+var recordings = [];
+
 function setProducerMessageHandlers(socket){
   socket.on('offer', function(msg){
     console.log('received offer from producer '+JSON.stringify(msg.data));
@@ -107,6 +110,35 @@ function setProducerMessageHandlers(socket){
     console.log('producer disconnected');
     io.emit('producer dead', {for: 'everyone'});
     producerSocket = null;
+  });
+
+  socket.on('recstart', function(msg){
+    console.log('start receiving recording for '+msg);
+    recordings[msg] = [];
+  });
+
+  socket.on('recstop', function(msg){
+    console.log('recording #'+msg+' completed');
+
+    if (recordings[msg]){
+      var recordingBuffer = Buffer.concat(recordings[msg]);
+      var fileName = 'recordings/'+['recording_', (new Date() + '').slice(4, 24).replace(/[ :]/g, '_'), '-', msg, '.mp4'].join('');
+      fs.writeFile(fileName, recordingBuffer, 'binary', function(err){
+        if (err)
+          console.log('error saving file '+err);
+        else
+          console.log('successfully saved video '+fileName);
+      });
+    }
+  });
+
+  socket.on('recchunk', function(msg){
+    if (recordings[msg.id])
+    {
+      var b = Buffer.from(msg.data)
+      console.log('recording #'+msg.id+', chunk size '+b.length + ' bytes');
+      recordings[msg.id].push(b);
+    }
   });
 }
 

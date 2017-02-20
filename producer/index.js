@@ -21,6 +21,9 @@ var consumers = [];
 var localStream;
 var pendingRequests = [];
 
+var recordRtc = undefined;
+var mediaRecorder = undefined;
+
 var qvgaConstraints  = {
 	mandatory: {
 		maxWidth: 320,
@@ -203,8 +206,6 @@ function gotUserMedia(stream){
             document.getElementById('currentDevices').innerHTML += '<br>Video size: '+localVideo.videoWidth+'X'+localVideo.videoHeight;
         }, 500);
     });
-	
-
 
 	if (pendingRequests && pendingRequests.length > 0)
 	{
@@ -284,3 +285,69 @@ document.onkeypress = function (event){
 		break;
 	}
 }
+
+function stopRecording(){
+  if (mediaRecorder.state != "recording")
+    return false;
+  else
+  {
+    mediaRecorder.stop()
+    return true;
+  }
+}
+
+var recordings = []
+var recordedChunks = []
+function startRecording(){
+  if (localStream)
+  {
+  	var options = {
+        // audioBitsPerSecond : 128000,
+        // videoBitsPerSecond : 2500000,
+        mimeType : 'video/mp4'
+      }
+    mediaRecorder = new MediaRecorder(localStream, options);
+
+    mediaRecorder.onstop = function(e) {
+    	console.log("onstop called. mime type "+mediaRecorder.mimeType);
+    	var recordedBlob = new Blob(recordedChunks);
+    	
+    	// download video
+    	// var a = document.createElement('a');
+    	// a.download = ['video_', (new Date() + '').slice(4, 28), '.mp4'].join('');
+    	// a.href = URL.createObjectURL(recordedBlob);
+    	// a.textContent = a.download;
+    	// document.getElementById('downloadlink').appendChild(a);
+
+    	socket.emit('recstop', recordings.length)
+
+    	recordings.push(recordedBlob);
+    	document.getElementById('recorded-video').src = URL.createObjectURL(recordedBlob);
+    }
+
+    mediaRecorder.ondataavailable = function(e) {
+    	console.log("new chunk, "+e.data.size + ' bytes');
+    	recordedChunks.push(e.data);
+    	socket.emit('recchunk', {'id':recordings.length, 'data':e.data});
+    }
+
+    mediaRecorder.onstart = function(e) {
+    	console.log("recording started");
+    	socket.emit('recstart', recordings.length)
+    }
+
+    mediaRecorder.onerror = function(e) {
+    	console.log("media recorder error: "+e.message);
+    }
+
+    recordedChunks = [];
+    mediaRecorder.start(1000);
+    return true;
+  }
+  else
+  {
+    console.log("there's no stream to record!");
+    return false;
+  }
+}
+

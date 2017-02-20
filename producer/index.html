@@ -5,6 +5,7 @@
   <script type="text/javascript" src="../common.js"></script>
   <script src="../socket.io-client/socket.io.js"></script>
   <script src="../webrtc-js/adapter.js"></script>
+  <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
   <script src="index.js"></script>
   <script>
   
@@ -110,6 +111,26 @@
     setCookie('audioMute', audioMute, 30);
     trace('set audio mute to '+getCookie('audioMute'));
   }
+
+  function toggleRecording(){
+    if (mediaRecorder && mediaRecorder.state == "recording")
+    {
+      if (stopRecording())
+      {
+        console.log("Stopped recording");
+        document.getElementById("recordButton").innerText = "Record";
+      }
+    }
+    else
+    {
+      if (startRecording())
+      {
+        console.log("Starting recording");
+        document.getElementById("recordButton").innerText = "Stop recording";
+      }
+    }
+  }
+
   </script>
 </head>
 <body>
@@ -131,10 +152,13 @@
     Width: <input type="text" id="gumWidth" value=""> Height: <input type="text" id="gumHeight" value=""> FPS: <input type="text" id="gumFPS" value="">
     <p id='currentDevices'></p>
   </div>
-
+  
+  <button type="button" id="recordButton" onclick="toggleRecording()">Record</button>
+  <div id="downloadlink"></div>
   <div id="localvideo">
     <video id="local-video" width=320 autoplay muted></video>    
-    <video id="remote-video" width=180 autoplay muted></video>    
+    <video id="remote-video" width=180 autoplay muted></video>
+    <video id="recorded-video" width=180 autoplay muted></video>    
     <div id="status"></div>
   </div>
   <br>
