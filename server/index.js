@@ -1,5 +1,7 @@
 var app = require('express')();
 var fs = require('fs');
+var os = require('os');
+var path = require('path');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var producerSocket;
@@ -7,6 +9,7 @@ var consumerIds = [];
 var consumerSockets = [];
 var consumerNo = 0;
 var port = (process.argv.length == 3)?process.argv[2]:3001;
+const recordingDir = 'recordings'; 
 
 app.get('/', function(req, res){
   res.send('Use your local index.html');
@@ -90,6 +93,24 @@ function setConsumerMessageHandlers(socket){
       delete consumerIds[this.id]
       delete consumerSockets[consumerId]
     }
+  });
+
+  socket.on('reclist', function() {
+    consumerId = consumerIds[this.id];
+    var recordingList = [];
+
+    console.log('searching records directory '+recordingDir);
+    var files = fs.readdirSync('./'+recordingDir);
+    files.forEach(file => {
+        if (path.extname(file) == '.mp4')
+        {
+          console.log('found recording '+file);
+          recordingList.push(recordingDir + '/' + file);
+        }
+    });
+    
+    console.log('sending list of recordings for '+consumerId+' '+recordingList);
+    this.emit('reclist', recordingList);
   });  
 }
 
@@ -122,7 +143,7 @@ function setProducerMessageHandlers(socket){
 
     if (recordings[msg]){
       var recordingBuffer = Buffer.concat(recordings[msg]);
-      var fileName = 'recordings/'+['recording_', (new Date() + '').slice(4, 24).replace(/[ :]/g, '_'), '-', msg, '.mp4'].join('');
+      var fileName = recordingDir+'/'+['recording_', (new Date() + '').slice(4, 24).replace(/[ :]/g, '_'), '-', msg, '.mp4'].join('');
       fs.writeFile(fileName, recordingBuffer, 'binary', function(err){
         if (err)
           console.log('error saving file '+err);

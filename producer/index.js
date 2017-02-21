@@ -304,7 +304,7 @@ function startRecording(){
   	var options = {
         // audioBitsPerSecond : 128000,
         // videoBitsPerSecond : 2500000,
-        mimeType : 'video/mp4'
+        // mimeType : 'video/mp4'
       }
     mediaRecorder = new MediaRecorder(localStream, options);
 
