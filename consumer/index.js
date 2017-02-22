@@ -147,12 +147,12 @@ document.onkeypress = function (event){
 function setUpRecordingButtonListeners() {
     document.getElementById('btnStartRec').onclick = function() {
     	trace('initiating request for recording to start');
-      	socket.emit('recstart');
+      	socket.emit('recstart', {});
     };
 
     document.getElementById('btnStopRec').onclick = function() {
     	trace('initiating request for recording to stop');
-      	socket.emit('recstop');
+      	socket.emit('recstop', {});
     };
 }
 

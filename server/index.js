@@ -113,14 +113,14 @@ function setConsumerMessageHandlers(socket){
     this.emit('reclist', recordingList);
   });
 
-  socket.on('recstart', function() {
-    console.log("sending request to start recording from" + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
+  socket.on('recstart', function(msg) {
+    console.log("sending request to start recording from " + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
     if(producerSocket)
       producerSocket.emit('recstart', {from: consumerIds[socket.id], data: {}});
   });
 
-  socket.on('recstop', function() {
-    console.log("sending request to stop recording from" + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
+  socket.on('recstop', function(msg) {
+    console.log("sending request to stop recording from " + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
     if(producerSocket)
       producerSocket.emit('recstop', {from: consumerIds[socket.id], data: {}});
   });

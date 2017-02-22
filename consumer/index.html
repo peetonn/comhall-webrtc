@@ -12,6 +12,7 @@
     document.getElementById('serverIp').value = defaultProducerAddress;
     document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
     document.getElementById('webcam').checked = (chosenCamera == 'web');
+    setUpRecordingButtonListeners();
     setupVideoToCanvasProcessing();
   }
 
