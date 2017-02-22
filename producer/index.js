@@ -118,6 +118,16 @@ function setupSocket(url){
 		}
 		updateStatus();
 	});
+
+	socket.on('recstart', function(msg) {
+		trace('request to start recording received from ' + msg.from);
+		startRecording();
+	});
+
+	socket.on('recstop', function(msg) {
+		trace('request to stop recording received from ' + msg.from);
+		stopRecording();
+	});
 }
 
 function createPeerConnection(consumerId){

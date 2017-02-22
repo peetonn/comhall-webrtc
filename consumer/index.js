@@ -144,6 +144,18 @@ document.onkeypress = function (event){
 	}
 }
 
+function setUpRecordingButtonListeners() {
+    document.getElementById('btnStartRec').onclick = function() {
+    	trace('initiating request for recording to start');
+      	socket.emit('recstart');
+    };
+
+    document.getElementById('btnStopRec').onclick = function() {
+    	trace('initiating request for recording to stop');
+      	socket.emit('recstop');
+    };
+}
+
 // video-to-canvas magic...
 // see more on http://html5hub.com/using-the-getusermedia-api-with-the-html5-video-and-canvas-elements/
 function setupVideoToCanvasProcessing(){
