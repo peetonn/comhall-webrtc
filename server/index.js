@@ -9,7 +9,8 @@ var consumerIds = [];
 var consumerSockets = [];
 var consumerNo = 0;
 var port = (process.argv.length == 3)?process.argv[2]:3001;
-const recordingDir = 'recordings'; 
+const recordingDir = 'recordings';
+var activeRecordingName = undefined
 
 app.get('/', function(req, res){
   res.send('Use your local index.html');
@@ -114,15 +115,22 @@ function setConsumerMessageHandlers(socket){
   });
 
   socket.on('recstart', function(msg) {
-    console.log("sending request to start recording from " + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
+    console.log("sending request to start recording ("+ msg['recname'] +") from " + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
     if(producerSocket)
+    {
+      activeRecordingName = msg['recname'];
       producerSocket.emit('recstart', {from: consumerIds[socket.id], data: {}});
+    }
+    else
+      console.log('error: no producer socket. is producer connected?');
   });
 
   socket.on('recstop', function(msg) {
     console.log("sending request to stop recording from " + consumerIds[socket.id] + ': ' + JSON.stringify(msg));
     if(producerSocket)
       producerSocket.emit('recstop', {from: consumerIds[socket.id], data: {}});
+    else
+      console.log('error: no producer socket. is producer connected?');
   });
 }
 
@@ -155,7 +163,9 @@ function setProducerMessageHandlers(socket){
 
     if (recordings[msg]){
       var recordingBuffer = Buffer.concat(recordings[msg]);
-      var fileName = recordingDir+'/'+['recording_', (new Date() + '').slice(4, 24).replace(/[ :]/g, '_'), '-', msg, '.mp4'].join('');
+      var tempFileName = recordingDir+'/'+['recording_', (new Date() + '').slice(4, 24).replace(/[ :]/g, '_'), '-', msg, '.mp4'].join('');
+      var fileName = (activeRecordingName == undefined ? tempFileName : recordingDir+'/'+activeRecordingName+'.mp4');
+
       fs.writeFile(fileName, recordingBuffer, 'binary', function(err){
         if (err)
           console.log('error saving file '+err);
