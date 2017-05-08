@@ -11,11 +11,115 @@ var consumerNo = 0;
 var port = (process.argv.length == 3)?process.argv[2]:3001;
 const recordingDir = 'recordings';
 var activeRecordingName = undefined
+var recordings = [];
+
+// signaling sever API
+// ---------------------
+// signaling server API enables rendez-vous and coordination
+// between WebRTC producer and WebRTC (or any other, e.g. iOS) 
+// consumer(s)
+// 
+// socket.io is used for communication
+// all API messages and their payloads are described below.
+// 
+//                                 msg            |       payload               
+//  1. initial connection     --------------------+-----------------------------
+//  1.1a producer -> server                       |
+//                              'id'              |   "producer"
+//  1.1b server -> everyone     'producer alive'  |   <none>
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  1.2a consumer -> server     'id'              |   "consumer"
+//  1.2b server -> consumer     'id'              |   <consumer-id>
+//  1.2c server -> consumer     'producer alive'  |   <none>
+//  1.2d server -> producer     'new consumer'    |   { 
+//                                                |     "from":<consumer-id>; 
+//                                                |     "data":{}
+//                                                |   }
+// -----------------------------------------------+-----------------------------
+//  2. producer handlers                          |
+//  2.1a webrtc offer (producer->server)          |
+//                               'offer'          |   {
+//                                                |     "to":<consumer-id>;
+//                                                |     "data":<webrtc-offer>
+//                                                |   }
+//  2.1b forward offer (server->consumer)         |
+//                               'offer'          |   <webrtc-offer>
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  2.2a ice candidate (producer->server)         |
+//                               'ice'            |   {
+//                                                |     "to":<consumer-id>;
+//                                                |     "data"<ice-candidates>
+//                                                |   }
+//  2.2b forward ice (server->consumer)           |
+//                               'ice'            |   <ice-candidates>
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  2.3a disconnection (producer->server)         |
+//                               'disconnect'     |   <none>
+//  2.3b broadcast (server->everyone)             |
+//                               'producer dead'  |   <none>
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  2.4 recording started (producer->server)      |
+//                               'recstart'       |   <recording-index>
+//  2.5 recording stopped (producer->server)      |
+//                               'recstop'        |   <recording-index>
+//  2.6 chunk received (producer->server)         |
+//                               'recchunk'       |   <encoded-video-chunk>
+// -----------------------------------------------+-----------------------------
+//  3. consumer handlers                          |
+//  3.1a webrtc answer (consumer->server)         |
+//                               'answer'         |   <webrtc-answer> 
+//  3.1b forward answer (server->producer)        |
+//                               'answer'         |   {
+//                                                |     "from":<consumer-id>;
+//                                                |     "data":<webrtc-answer>
+//                                                |   }
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  3.2a ice candidate (consumer->server)         |
+//                               'ice'            |   <ice-candidates> 
+//  3.2b forward ice (server->producer)           |
+//                               'ice'            |   {
+//                                                |     "from":<consumer-id>;
+//                                                |     "data":<ice-candidates>
+//                                                |   }
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  3.3a disconnection (consumer->server)         |
+//                               'disconnect'     |   <none>
+//  3.3b forward disconnect (server->producer)    |
+//                               'bye'            |   {
+//                                                |     "from":<consumer-id>
+//                                                |   }
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  3.4a get recordings list (consumer->server)   |
+//                               'reclist'        |   <none>
+//  3.4b recordings list reply (server->consumer) |
+//                               'reclist'        |   [ 
+//                                                |     <recording-name1>,
+//                                                |     <recording-name2>,
+//                                                |     ...
+//                                                |   ]
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  3.5a start recording (consumer->server)       |
+//                               'recstart'       |   <none>
+//  3.5b forward (server->producer)               |
+//                               'recstart'       |   {
+//                                                |     "from":<consumer-id>;
+//                                                |     "data":{}
+//                                                |   }
+// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+//  3.6a stop recording (consumer->server)        |
+//                               'recstop'        |   <none>
+//  3.6b forward (server->producer)               |
+//                               'recstop'        |   {
+//                                                |     "from":<consumer-id>;
+//                                                |     "data":{}
+//                                                |   }
 
 app.get('/', function(req, res){
   res.send('Use your local index.html');
 });
 
+// handle new socket connections - either producer or consumer 
+//  (see "1. initial connection" in the table above)
 io.on('connection', function(socket){
   socket.on('id', function(msg){
     if (msg == 'producer')
@@ -70,6 +174,12 @@ io.on('connection', function(socket){
   });
 });
 
+http.listen(port, function(){
+  console.log('listening on *:'+port);
+});
+
+// sets up handlers for messages, reevied from consumers
+//  (see "3. consumer handlers" in the table above
 function setConsumerMessageHandlers(socket){
   socket.on('answer', function(msg){
     console.log('sending answer from '+consumerIds[socket.id]+': '+JSON.stringify(msg));
@@ -134,8 +244,8 @@ function setConsumerMessageHandlers(socket){
   });
 }
 
-var recordings = [];
-
+// sets up handlers for messages, received from producer
+//  (see "2. producer handlers" in the table above
 function setProducerMessageHandlers(socket){
   socket.on('offer', function(msg){
     console.log('received offer from producer '+JSON.stringify(msg.data));
@@ -184,10 +294,6 @@ function setProducerMessageHandlers(socket){
     }
   });
 }
-
-http.listen(port, function(){
-  console.log('listening on *:'+port);
-});
 
 function sendToConsumer(consumerId, type, data){
   var consumerSocket = consumerSockets[consumerId];
