@@ -10,6 +10,11 @@
   <script>
   
   setupSocket(defaultServerUrl);
+  let supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
+  console.log('constraints supported by the agent: ');
+  for (let constraint in supportedConstraints) 
+    console.log(constraint);
+
   console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
   navigator.getUserMedia({audio:!getCookie('audioMute'), video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
   
@@ -82,11 +87,11 @@
     constraints.video = { 
       width: {min: gumWidth}, height:{min: gumHeight}, 
       minFrameRate:gumFps,
-      sourceId: videoSource.id
+      deviceId: videoSource.deviceId
     };
-    
+
     trace('getUserMedia constraints: '+constraints);
-    trace('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
+    trace('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps+' from '+videoSource.label+' (id: '+videoSource.deviceId+')');
     navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
   }
 
@@ -131,6 +136,20 @@
     }
   }
 
+  function onVideoSourceChanged(){
+    var videoList = document.getElementById('videolist');
+    var videoSource = videoDevicesList[videoList.selectedIndex];
+
+    console.log("changed video source to: " + videoSource.label+' (id: '+videoSource.deviceId+')');
+
+    var constraints = {
+      audio: !getCookie('audioMute'),
+      video: {deviceId: videoSource ? {exact: videoSource.deviceId} : undefined}
+    };
+
+    navigator.getUserMedia(constraints, gotUserMedia, onErrorCallback);
+  }
+
   </script>
 </head>
 <body>
@@ -144,7 +163,7 @@
     <br>
     <select id="audiolist">
     </select>
-    <select id="videolist">
+    <select id="videolist" onchange="onVideoSourceChanged()">
     </select>
     <button type="button" id="publishButton" onclick="startPublishingClick()">Publish</button>
     <br>
