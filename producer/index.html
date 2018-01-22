@@ -15,8 +15,10 @@
   for (let constraint in supportedConstraints) 
     console.log(constraint);
 
-  console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps);
-  navigator.getUserMedia({audio:!getCookie('audioMute'), video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
+  var audioMuted = (getCookie('audioMute') === null ? true : getCookie('audioMute'));
+  console.log('asking for video '+gumWidth+'X'+gumHeight+'@'+gumFps+'; audio muted: '+audioMuted);
+
+  navigator.getUserMedia({audio:!audioMuted, video:{ width: {min: gumWidth}, height:{min: gumHeight}, minFrameRate:gumFps}}, gotUserMedia, onErrorCallback);
   
   window.onload = function(){
     document.getElementById('ptzcam').checked = (chosenCamera == 'ptz');
